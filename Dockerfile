@@ -1,5 +1,9 @@
 FROM python:3.9
-LABEL mantainer="Josip Janzic <josip@jjanzic.com>"
+LABEL mantainer="Maxim [maxirmx] Samsonov <m.samsonov@computer.org>"
+
+# Keeps Python from generating .pyc files in the container
+ENV PYTHONDONTWRITEBYTECODE=1
+
 
 RUN apt-get update \
     && apt-get install -y \
@@ -16,14 +20,17 @@ RUN apt-get update \
         libjpeg-dev \
         libpng-dev \
         libtiff-dev \
+        libopenjp2-7-dev \
         libavformat-dev \
         libpq-dev \
+        libgtk2.0-dev \
+        libgtkglext1-dev \
     && rm -rf /var/lib/apt/lists/*
 
 RUN pip install numpy
 
 WORKDIR /
-ENV OPENCV_VERSION="4.5.0"
+ENV OPENCV_VERSION="4.5.1"
 RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 && unzip ${OPENCV_VERSION}.zip \
 && mkdir /opencv-${OPENCV_VERSION}/cmake_binary \
@@ -51,3 +58,17 @@ RUN wget https://github.com/opencv/opencv/archive/${OPENCV_VERSION}.zip \
 RUN ln -s \
   /usr/local/python/cv2/python-3.9/cv2.cpython-37m-x86_64-linux-gnu.so \
   /usr/local/lib/python3.9/site-packages/cv2.so
+
+# Turns off buffering for easier container logging
+ENV PYTHONUNBUFFERED=1
+
+WORKDIR /app
+COPY . /app
+
+# Switching to a non-root user, please refer to https://aka.ms/vscode-docker-python-user-rights
+RUN useradd appuser && chown -R appuser /app
+USER appuser
+
+
+# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
+CMD ["python", "test.py"]
